@@ -36,7 +36,5 @@ This is the mobile browser version designed to run in Brave Mobile as a web app.
 ## Notes
 The app now has a real compiler pipeline, a functional virtual device lab, local persistence, and a ZIP export that includes both the workspace and generated project files. The current build also uses root-level icons so export and install stay aligned with the repository layout.
 
-
 ## Final upload check
-
 Upload the extracted contents from this folder into the GitHub repository root and remove any old ZIP archives left in the repo.
