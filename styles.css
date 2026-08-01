@@ -136,3 +136,8 @@ input, textarea {
 @media (min-width: 760px) {
   .gridTwo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 }
+
+/* Calibration / feedback enhancements */
+[data-runtime-banner] strong { letter-spacing: 0.01em; }
+.pill-running, .pill-building { box-shadow: 0 0 0 1px rgba(245,158,11,.15) inset; }
+button:disabled { cursor: not-allowed; opacity: 0.75; }

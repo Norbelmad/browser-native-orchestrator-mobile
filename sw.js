@@ -1,4 +1,4 @@
-const CACHE = 'browser-native-orchestrator-mobile-v2';
+const CACHE = 'browser-native-orchestrator-mobile-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -6,8 +6,8 @@ const ASSETS = [
   './app.js',
   './manifest.webmanifest',
   './README.md',
-  './assets/icon-192.png',
-  './assets/icon-512.png',
+  './icon-192.png',
+  './icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {

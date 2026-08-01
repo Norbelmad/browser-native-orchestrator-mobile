@@ -1,6 +1,6 @@
 
 const STORAGE_KEY = 'browser-native-orchestrator-mobile-v2';
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 
 const STAGES = [
   { id: 'planner', role: 'planner', title: 'Plan app architecture' },
@@ -125,6 +125,10 @@ let activeTab = 'build';
 let deferredPrompt = null;
 
 const qs = (id) => document.getElementById(id);
+const COMMAND_IDS = ['command', 'commandInput'];
+function getCommandField() {
+  return COMMAND_IDS.map(qs).find(Boolean) || null;
+}
 
 function nowTime() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -272,6 +276,64 @@ function setStatus(status, currentTask) {
   state.currentTask = currentTask || state.currentTask;
   saveState();
   render();
+}
+
+function updateCompileControls() {
+  const isBusy = state.buildStatus === 'building';
+  const buildButton = qs('compileBtn');
+  const homeButton = qs('quickCompile');
+
+  if (buildButton) {
+    buildButton.disabled = isBusy;
+    buildButton.textContent = isBusy ? 'Running…' : 'Run compiler';
+  }
+
+  if (homeButton) {
+    homeButton.disabled = isBusy;
+    homeButton.textContent = isBusy ? 'Running…' : 'Compile';
+  }
+}
+
+function compileButtonLabel() {
+  return state.buildStatus === 'building' ? 'Running…' : 'Run compiler';
+}
+
+function compileButtonDisabled() {
+  return state.buildStatus === 'building';
+}
+
+function ensureBuildBanner(root) {
+  if (!root) return null;
+  let banner = root.querySelector('[data-runtime-banner]');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.dataset.runtimeBanner = 'true';
+    banner.style.margin = '0 0 12px 0';
+    banner.style.padding = '12px 14px';
+    banner.style.borderRadius = '16px';
+    banner.style.border = '1px solid rgba(255,255,255,.12)';
+    banner.style.background = 'rgba(255,255,255,.05)';
+    banner.style.display = 'flex';
+    banner.style.justifyContent = 'space-between';
+    banner.style.gap = '12px';
+    banner.style.alignItems = 'center';
+    root.prepend(banner);
+  }
+  const statusColor = state.buildStatus === 'building'
+    ? '#f59e0b'
+    : state.buildStatus === 'ready'
+      ? '#22c55e'
+      : '#94a3b8';
+  banner.innerHTML = `
+    <div>
+      <div style="font-weight:700">Compiler status</div>
+      <div style="opacity:.8">${escapeHtml(state.currentTask || 'Idle')}</div>
+    </div>
+    <div style="font-weight:700; color:${statusColor}; text-transform:uppercase; letter-spacing:.04em">
+      ${escapeHtml(state.buildStatus)}
+    </div>
+  `;
+  return banner;
 }
 
 function getFile(path) {
@@ -461,7 +523,7 @@ function renderTaskList() {
   const target = qs('taskList');
   if (!target) return;
   target.innerHTML = state.tasks.map((task) => `
-    <div class="item">
+    <div class="item" style="${task.status === 'running' ? 'outline:2px solid rgba(245,158,11,.65); outline-offset:2px;' : ''}">
       <div>
         <div><strong>${escapeHtml(task.title)}</strong></div>
         <div class="muted">${escapeHtml(task.role)} • ${escapeHtml(task.notes?.[0] || 'Ready')}</div>
@@ -519,6 +581,7 @@ function renderBuild() {
   renderTaskList();
   renderFileList();
   renderLogs();
+  ensureBuildBanner(root);
 
   qs('projectName').oninput = () => { state.projectName = qs('projectName').value; saveState(); };
   qs('goal').oninput = () => { state.goal = qs('goal').value; saveState(); };
@@ -624,7 +687,7 @@ function renderCommonBindings() {
   const installBtn = qs('installBtn');
   if (installBtn) {
     installBtn.hidden = false;
-    installBtn.textContent = deferredPrompt ? 'Install app' : 'Install app';
+    installBtn.textContent = deferredPrompt ? 'Install app' : 'Add to Home Screen';
     installBtn.onclick = async () => {
       if (deferredPrompt) {
         deferredPrompt.prompt();
@@ -651,6 +714,7 @@ function renderCommonBindings() {
   };
 
   qs('exportBtn').onclick = buildZip;
+
 
   document.querySelectorAll('[data-select-file]').forEach((button) => {
     button.onclick = () => setSelectedFile(button.dataset.selectFile);
@@ -712,15 +776,21 @@ function renderCommonBindings() {
   const previewModeEl = qs('previewMode');
   if (previewModeEl) previewModeEl.onchange = () => { state.previewEnabled = previewModeEl.checked; saveState(); };
 
-  ['projectName', 'goal', 'prompt', 'packageName', 'packageVersion', 'packageScreen', 'packageDescription', 'editor', 'taskInput', 'searchFiles', 'command'].forEach((id) => {
+  ['projectName', 'goal', 'prompt', 'packageName', 'packageVersion', 'packageScreen', 'packageDescription', 'editor', 'taskInput', 'searchFiles'].forEach((id) => {
     const el = qs(id);
     if (!el) return;
     el.addEventListener('input', () => {
-      if (id === 'command') return;
       if (id === 'editor') return;
       saveState();
     });
   });
+  const commandField = getCommandField();
+  if (commandField) {
+    commandField.addEventListener('input', () => {
+      state.commandValue = commandField.value;
+      saveState();
+    });
+  }
 }
 
 function render() {
@@ -732,6 +802,7 @@ function render() {
 
   renderTabs();
   renderCommonBindings();
+  updateCompileControls();
   saveState();
 }
 
@@ -779,16 +850,6 @@ function generateDraft() {
 
 async function compileProject() {
   if (state.buildStatus === 'building') return;
-
-  ensureDefaultFiles();
-  state.buildStatus = 'building';
-  state.currentTask = 'Initializing compiler pipeline';
-  state.commandOutput = 'Compiler started.';
-  const customTasks = state.tasks.filter((task) => !STAGES.some((stage) => stage.id === task.id));
-  state.tasks = [...planStages(), ...customTasks];
-  log('Planner created the task flow.');
-  render();
-  await pause(120);
 
   const stages = [
     {
@@ -898,27 +959,48 @@ async function compileProject() {
     },
   ];
 
-  for (const stage of stages) {
-    state.currentTask = stage.title;
-    updateTaskStatus(stage.id, 'running', 'Running');
-    log(`${stage.title} started.`);
+  try {
+    ensureDefaultFiles();
+    state.buildStatus = 'building';
+    state.currentTask = 'Initializing compiler pipeline';
+    state.commandOutput = 'Compiler started.';
+    const customTasks = state.tasks.filter((task) => !STAGES.some((stage) => stage.id === task.id));
+    state.tasks = [...planStages(), ...customTasks];
+    log('Planner created the task flow.');
     render();
-    await pause(140);
-    stage.run();
-    updateTaskStatus(stage.id, 'done', 'Complete');
-    log(`${stage.title} complete.`);
-    render();
-    await pause(100);
-  }
+    await pause(120);
 
-  state.buildStatus = 'ready';
-  state.currentTask = 'Compiler ready';
-  state.commandOutput = 'Compiler run completed successfully.';
-  state.deviceScreen = deviceScreenFromSource(getFile('src/App.tsx')?.content || sourceDraft || '');
-  ensureDefaultFiles();
-  saveState();
-  log('Compiler run completed.');
-  render();
+    for (const stage of stages) {
+      state.currentTask = stage.title;
+      updateTaskStatus(stage.id, 'running', 'Running');
+      log(`${stage.title} started.`);
+      render();
+      await pause(140);
+      stage.run();
+      updateTaskStatus(stage.id, 'done', 'Complete');
+      log(`${stage.title} complete.`);
+      render();
+      await pause(100);
+    }
+
+    state.buildStatus = 'ready';
+    state.currentTask = 'Compiler ready';
+    state.commandOutput = 'Compiler run completed successfully.';
+    state.deviceScreen = deviceScreenFromSource(getFile('src/App.tsx')?.content || sourceDraft || '');
+    ensureDefaultFiles();
+    saveState();
+    log('Compiler run completed.');
+    render();
+  } catch (error) {
+    state.buildStatus = 'error';
+    state.currentTask = 'Compiler failed';
+    state.commandOutput = `Compiler error: ${error.message}`;
+    log(`Compiler failed: ${error.message}`);
+    render();
+  } finally {
+    updateCompileControls();
+    saveState();
+  }
 }
 
 function installPackage() {
@@ -950,6 +1032,7 @@ function runApp() {
   state.installedApps = state.installedApps.map((app) => ({ ...app, running: true, lastLaunched: new Date().toISOString() }));
   state.deviceScreen = deviceScreenFromSource(getFile('src/App.tsx')?.content || sourceDraft || '');
   state.commandOutput = `Launching ${state.packageName}...`;
+  state.currentTask = 'Virtual app running';
   log(`Running ${state.projectName} on the mobile emulator.`);
   render();
 }
@@ -1194,7 +1277,7 @@ async function collectShellFiles() {
     }
   }
 
-  const binaryPaths = ['assets/icon-192.png', 'assets/icon-512.png'];
+  const binaryPaths = ['icon-192.png', 'icon-512.png', 'assets/icon-192.png', 'assets/icon-512.png'];
   for (const path of binaryPaths) {
     try {
       files.push({ name: `workspace/${path}`, data: await fetchBinary(`./${path}`) });
@@ -1211,11 +1294,20 @@ async function buildZip() {
     const projectFiles = state.files.map((file) => ({ name: `project/${file.path}`, data: file.content }));
     const reportFiles = makeProjectReports().map((file) => ({ name: `reports/${file.path.replace(/^reports\//, '')}`, data: file.content }));
     const shellFiles = await collectShellFiles();
+    const expectedShellFiles = ['index.html', 'app.js', 'styles.css', 'manifest.webmanifest', 'sw.js', 'README.md', 'assets/icon-192.png', 'assets/icon-512.png'];
+    const missingShellFiles = expectedShellFiles.filter((path) => !shellFiles.some((entry) => entry.name.endsWith(path)));
+    if (missingShellFiles.length) {
+      throw new Error(`Missing shell assets: ${missingShellFiles.join(', ')}`);
+    }
     const bundle = {
       generatedAt: new Date().toISOString(),
       project: projectSnapshot(),
     };
 
+    const missingAssets = ['icon-192.png', 'icon-512.png'].filter((name) => !shellFiles.some((entry) => entry.name.endsWith(name)));
+    if (missingAssets.length) {
+      state.logs = state.logs.concat({ id: Date.now(), text: `Missing shell assets: ${missingAssets.join(', ')}`, time: nowTime() }).slice(-80);
+    }
     const zip = buildZipFromEntries([
       ...shellFiles,
       ...projectFiles,

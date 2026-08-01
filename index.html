@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-title" content="Browser Native Orchestrator" />
   <title>Browser Native Orchestrator</title>
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="assets/icon-192.png" />
-  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="icon" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -103,6 +103,7 @@
       <label>Package name<input id="packageName" type="text" /></label>
       <label>Package version<input id="packageVersion" type="text" /></label>
       <label>Seed screen<textarea id="packageScreen" rows="4"></textarea></label>
+      <label>Package description<input id="packageDescription" type="text" /></label>
 
       <div class="row">
         <button id="installDeviceBtn" class="primary">Install</button>
@@ -115,7 +116,7 @@
           <strong>adb-like command</strong>
           <button id="runCmdBtn" class="mini">Run</button>
         </div>
-        <input id="commandInput" placeholder="devices | install | shell am start | logcat | reboot" />
+        <input id="command" placeholder="devices | install | shell am start | logcat | reboot" />
         <pre id="commandOutput" class="output"></pre>
       </div>
 
