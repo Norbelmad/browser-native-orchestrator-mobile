@@ -5,21 +5,24 @@ This is the mobile browser version designed to run in Brave Mobile as a web app.
 ## What it does
 - Build and manage app projects
 - Generate source drafts and manifests
-- Export a handoff ZIP
+- Run a multi-stage browser-native compiler flow
+- Export a real ZIP bundle of the workspace and project outputs
 - Simulate install/run behavior in the built-in virtual device lab
 - Save state in browser storage
 - Work offline once cached by the service worker
 
-## What it does not do
-- It does not install a true Android APK on your phone
-- It does not replace Android Studio for native compilation
-- It does not load as a desktop extension on mobile Brave
+## Current buttons
+- **Generate draft** creates a new app shell from the current prompt
+- **Run compiler** runs the staged planner → architect → builder → critic → tester → packager → runner flow
+- **Install** simulates installing the compiled app into the virtual device
+- **Run** launches the app preview on the virtual device
+- **Export ZIP** downloads a real bundle of the workspace and project files
+- **Save** stores the current state locally in the browser
 
 ## Install path on Brave Mobile
-1. Host this folder on a website with HTTPS.
-2. Open the site in Brave Mobile.
-3. Use the browser menu to add it to the home screen or install it as a web app if the browser offers the option.
-4. Open it from the home screen like a normal app.
+1. Open the GitHub Pages site in Brave Mobile.
+2. Use the browser menu to add it to the home screen or install it as a web app if the browser offers the option.
+3. Open it from the home screen like a normal app.
 
 ## Files
 - `index.html`
@@ -31,4 +34,4 @@ This is the mobile browser version designed to run in Brave Mobile as a web app.
 - `assets/icon-512.png`
 
 ## Notes
-The web app includes its own project builder, export flow, and virtual device lab so you can keep using it from a phone.
+The app now has a real compiler pipeline, a functional virtual device lab, local persistence, and a ZIP export that includes both the workspace and generated project files.

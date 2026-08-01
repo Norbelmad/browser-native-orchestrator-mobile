@@ -1,10 +1,11 @@
-const CACHE = 'browser-native-orchestrator-mobile-v1';
+const CACHE = 'browser-native-orchestrator-mobile-v2';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './manifest.webmanifest',
+  './README.md',
   './assets/icon-192.png',
   './assets/icon-512.png',
 ];

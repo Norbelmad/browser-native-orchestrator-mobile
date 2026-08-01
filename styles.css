@@ -77,9 +77,27 @@ input, textarea {
 .stat span { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
 .stat strong { font-size: 15px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .muted { color: var(--muted); font-size: 12px; }
+.task-meta { display: flex; align-items: center; gap: 8px; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(124,58,237,.16);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+.pill-queued { background: rgba(255,255,255,0.08); }
+.pill-running { background: rgba(59,130,246,.18); }
+.pill-done { background: rgba(34,197,94,.18); }
+.pill-blocked, .pill-failed { background: rgba(239,68,68,.18); }
+.subtle { color: var(--muted); font-size: 13px; line-height: 1.5; }
 .list, .logs { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow: auto; }
 .item, .log {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex; justify-content: space-between; align-items: flex-start;
   gap: 10px; padding: 11px; border-radius: 16px;
   border: 1px solid var(--line); background: rgba(255,255,255,0.03);
 }
