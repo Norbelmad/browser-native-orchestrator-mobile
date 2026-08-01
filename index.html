@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Browser Native Orchestrator" />
+  <title>Browser Native Orchestrator</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/icon-192.png" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <section class="hero card">
+      <div class="badge">Mobile PWA</div>
+      <h1>Browser Native Orchestrator</h1>
+      <p>Create apps, manage files, simulate installation, and run on the virtual device lab directly in Brave Mobile.</p>
+      <div class="actions">
+        <button id="installBtn" class="primary" hidden>Install app</button>
+        <button id="saveBtn" class="secondary">Save</button>
+        <button id="exportBtn" class="secondary">Export ZIP</button>
+      </div>
+      <div class="subtle" id="installHint">If Brave offers it, use the browser menu to add this page to the home screen.</div>
+    </section>
+
+    <section class="tabs card">
+      <button data-tab="build" class="tab active">Build</button>
+      <button data-tab="device" class="tab">Device</button>
+      <button data-tab="export" class="tab">Export</button>
+      <button data-tab="settings" class="tab">Settings</button>
+    </section>
+
+    <section id="content"></section>
+  </main>
+
+  <template id="buildTemplate">
+    <section class="card stack">
+      <div class="row">
+        <div class="stat"><span>Files</span><strong id="fileCount">0</strong></div>
+        <div class="stat"><span>Tasks</span><strong id="taskCount">0</strong></div>
+        <div class="stat"><span>Workers</span><strong id="workerCount">0</strong></div>
+      </div>
+
+      <label>Project name<input id="projectName" type="text" /></label>
+      <label>Goal<textarea id="goal" rows="3"></textarea></label>
+      <label>Prompt<textarea id="prompt" rows="4"></textarea></label>
+
+      <div class="row">
+        <button id="draftBtn" class="primary">Generate draft</button>
+        <button id="compileBtn" class="secondary">Run compiler</button>
+      </div>
+
+      <div class="panel">
+        <div class="panelHeader">
+          <strong>Tasks</strong>
+          <button id="addTaskBtn" class="mini">+ Add</button>
+        </div>
+        <div class="inputRow">
+          <input id="taskInput" placeholder="Add a task" />
+        </div>
+        <div id="taskList" class="list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panelHeader">
+          <strong>Files</strong>
+          <button id="addFileBtn" class="mini">+ File</button>
+        </div>
+        <input id="searchFiles" placeholder="Search files" />
+        <div id="fileList" class="list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panelHeader">
+          <strong>Editor</strong>
+          <span id="selectedFileLabel" class="muted"></span>
+        </div>
+        <textarea id="editor" rows="12"></textarea>
+      </div>
+
+      <div class="panel">
+        <div class="panelHeader">
+          <strong>Logs</strong>
+          <span id="statusLabel" class="muted"></span>
+        </div>
+        <div id="logs" class="logs"></div>
+      </div>
+    </section>
+  </template>
+
+  <template id="deviceTemplate">
+    <section class="card stack">
+      <div class="row">
+        <div class="stat"><span>Device</span><strong>Mobile Lab</strong></div>
+        <div class="stat"><span>State</span><strong id="deviceStateLabel">ready</strong></div>
+        <div class="stat"><span>Apps</span><strong id="installedCount">0</strong></div>
+      </div>
+
+      <label>Package name<input id="packageName" type="text" /></label>
+      <label>Package version<input id="packageVersion" type="text" /></label>
+      <label>Seed screen<textarea id="packageScreen" rows="4"></textarea></label>
+
+      <div class="row">
+        <button id="installDeviceBtn" class="primary">Install</button>
+        <button id="runDeviceBtn" class="secondary">Run</button>
+        <button id="resetDeviceBtn" class="danger">Reset</button>
+      </div>
+
+      <div class="panel">
+        <div class="panelHeader">
+          <strong>adb-like command</strong>
+          <button id="runCmdBtn" class="mini">Run</button>
+        </div>
+        <input id="commandInput" placeholder="devices | install | shell am start | logcat | reboot" />
+        <pre id="commandOutput" class="output"></pre>
+      </div>
+
+      <div class="phone">
+        <div class="phoneBar">
+          <span>5G</span><span>Wi‑Fi</span><span>91%</span>
+        </div>
+        <div id="screen" class="screen"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panelHeader"><strong>Installed apps</strong></div>
+        <div id="installedList" class="list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panelHeader"><strong>Logs</strong></div>
+        <div id="deviceLogs" class="logs"></div>
+      </div>
+    </section>
+  </template>
+
+  <template id="exportTemplate">
+    <section class="card stack">
+      <div class="row">
+        <div class="stat"><span>Exports</span><strong id="exportCount">0</strong></div>
+        <div class="stat"><span>Bundle</span><strong id="bundleLabel">none</strong></div>
+        <div class="stat"><span>Saved</span><strong id="savedLabel">no</strong></div>
+      </div>
+      <div class="row">
+        <button id="buildZipBtn" class="primary">Download ZIP</button>
+        <button id="snapshotBtn" class="secondary">Snapshot</button>
+        <button id="importBtn" class="secondary">Import JSON</button>
+      </div>
+      <input id="importFile" type="file" accept="application/json" hidden />
+      <div class="panel">
+        <div class="panelHeader"><strong>Handoff contents</strong></div>
+        <div class="muted">Source files, manifest, bridge manifest, and virtual device state are included in the export.</div>
+      </div>
+    </section>
+  </template>
+
+  <template id="settingsTemplate">
+    <section class="card stack">
+      <label>Phone mode <input id="phoneMode" type="checkbox" /></label>
+      <label>Preview <input id="previewMode" type="checkbox" /></label>
+      <button id="resetAllBtn" class="danger">Reset all</button>
+    </section>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
